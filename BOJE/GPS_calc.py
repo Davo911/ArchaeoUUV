@@ -1,12 +1,12 @@
 from dronekit import connect, Command, LocationGlobal
 from pymavlink import mavutil
-import io, time, sys, argparse, math, serial, socket, math
+import io, time, sys, argparse, math, serial, socket, math, os
 from datetime import datetime, timedelta
 from subprocess import Popen
 import pynmea2
 import requests
 
-alt_url = "http://192.168.2.2:4777/mavlink/VFR_HUD/alt"
+alt_url = "http://192.168.2.2:4777/mavlink/VFR_HUD/"
 
 
 def decTodms(deg):
@@ -38,76 +38,105 @@ def parseArguments():
         return 2.0
 
 def start_mavProxy():
-    # mavproxy.py --out 127.0.0.1:14550 --show-errors --baudrate 115200
+    # mavproxy.py --out udp:127.0.0.1:14550 --show-errors --baudrate 115200
     print ("Start MavProxy Server...")
-    logfile = open("./mavprxy.log", "w")
-    server_proc = Popen(["mavproxy.py", "--out", "udp:127.0.0.1:14550"], shell=True,stdout=logfile)
-    time.sleep(15)
+    #logfile = open("./mavprxy.log", "w")
+    Popen(["mavproxy.py", "--out", "udp:127.0.0.1:14550"], shell=True)#,stdout=logfile)
+    time.sleep(1)
+    server_proc = Popen(["mavproxy.py", "--out", "udp:127.0.0.1:14550"], shell=True)#,stdout=logfile)
+    time.sleep(30)
+    return server_proc
+
+def isclose(a,b,tolerance):
+    return True if max(a,b) - min(a,b) < tolerance else False
 
 ###MAIN ENTRY POINT###
-string_length = parseArguments()
-print("String length:"+str(string_length))
+def main():
+    string_length = parseArguments()
+    print("String length:"+str(string_length))
 
-# Setup GPS serial port
-boje_serial_port = "/dev/ttyUSB0"
-ser_boje = serial.Serial(boje_serial_port, baudrate=115200,timeout=0.5)
+    try:
+        # Setup GPS serial port
+        boje_serial_port = "/dev/ttyUSB0"
+        ser_boje = serial.Serial(boje_serial_port, baudrate=115200,timeout=0.5)
+    except Exception as e:
+        print("No USB Device connected!")
 
-#   GC socket
-GC_IP = "192.168.2.1"
-GC_PORT = 27000
-sock_gc = socket.socket(socket.AF_INET, # Internet
-                     socket.SOCK_DGRAM) # UDP
+    #   GC socket
+    GC_IP = "192.168.2.1"
+    GC_PORT = 27000
+    sock_gc = socket.socket(socket.AF_INET, # Internet
+                        socket.SOCK_DGRAM) # UDP
 
-#   Open socket to Boot-pi
-BOOT_IP = "192.168.2.2"
-BOOT_PORT = 27000
-sock_boot = socket.socket(socket.AF_INET, # Internet
-                     socket.SOCK_DGRAM) # UDP
+    #   Open socket to Boot-pi
+    BOOT_IP = "192.168.2.2"
+    BOOT_PORT = 27000
+    sock_boot = socket.socket(socket.AF_INET, # Internet
+                        socket.SOCK_DGRAM) # UDP
 
-# Connect to the MavProxies
-#start_mavProxy()
-print ("Connecting boje...")
-# connection_boje = 'localhost:14550'
-# boje = connect(connection_boje,"baud=57600")#, wait_ready=False)
-#boje.wait_ready(True, timeout=180)
+    # Connect to the MavProxies
+    #start_mavProxy()
+    print ("Connecting boje...")
+    connection_boje = 'localhost:14550'
+    boje = None
+    try:
+        boje = connect(connection_boje,"baud=57600")#, wait_ready=False)
+    except Exception as e:
+        print("Connecting to BOJE failed...Restarting...")
+        os.system("sudo killall -SIGKILL mavproxy.py")
+    #boje.wait_ready(True, timeout=180)
+    
 
-# connection_boot = 'tcp:192.168.2.2:5760'
-# boot = None
-# try:
-#     boot = connect(connection_boot, wait_ready=True)
-# except Exception as e:
-#     print("Connection Error to Boot-FC")
-#     print('Parse error: {}'.format(e))
+    while boje != None:
+        time.sleep(0.01)
+        stat+=1
+        #get BOOT parameter
+        try:
+            resp = requests.get(alt_url + "alt")
+            depth = float(resp.content)
+            resp = requests.get(alt_url + "heading")
+            angle_boot = float(resp.content)
+            resp = requests.get(alt_url + "groundspeed")
+            speed_boot = float(resp.content)
+        except Exception as e:
+            print("No Data from BOOT!\n")
+
+        #get BOJE parameter
+        latitude = boje.location.global_frame.lat
+        longitude = boje.location.global_frame.lon
+        lat_dir = 'N' if latitude > 0 else 'S'
+        lon_dir = 'E' if longitude > 0 else 'W'
+        angle_boje = math.radians(boje.heading)
+        speed_boje = boje.groundspeed
+        newTime = datetime.now().strftime("%H%M%S.%f")
+
+        offset = math.sqrt((string_length**2)-(depth**2))
+        
+        #Correct if necessary
+        if (isclose(speed_boje, speed_boot, 0.2)):
+            stat-=1
+
+            newLatLng = add_offset(latitude, longitude, angle_boot, offset)
+            print("newLatlng: "+ str(newLatLng))
+
+            #Generate NMEA sentence and send it to UUV
+            GPS_boje = pynmea2.GGA('GP', 'GGA', (newTime , decTodms(newLatLng[0]), lat_dir,decTodms(newLatLng[1]), lon_dir, str(boje.gps_0.fix_type), str(boje.gps_0.satellites_visible), str(float(boje.gps_0.eph)/100), '0', 'M', '0', 'M', '', ''))
+            GSA_boje = pynmea2.GSA('GP', 'GSA', (boje.mode.name[1], str(boje.gps_0.fix_type),'17','15','19','24','32','10','12','25','','','','','0',str(boje.gps_0.eph ),str(10)))
+            print("Sending: ")
+            print(str(GPS_boje)+"\n")
+            print(str(GSA_boje)+"\n")
+            sock_boot.sendto(bytes(str(GPS_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+            sock_boot.sendto(bytes(str(GSA_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+    print("Connection lost")
+
 
 while True:
-    time.sleep(1)
-    resp = requests.get(alt_url)
-    print(resp.content)
+    try:
+        main()
+    except Exception as e:
+        print("\nMain Loop Failed: \n" + str(e) + "\n")
 
-    #get BOJE parameter
-    # latitude = boje.location.global_frame.lat
-    # longitude = boje.location.global_frame.lon
-    # lat_dir = 'N' if latitude > 0 else 'S'
-    # lon_dir = 'E' if longitude > 0 else 'W'
-    # angle_boje = math.radians(boje.heading)
-
-    #get BOOT parameter
-    #depth = boot.location.global_relative_frame.alt
-    #print("lat|lng: " + str(latitude) + " | " + str(longitude))
-    #print("depth: "+ depth)
-
-    # offset = math.sqrt((string_length**2)-(depth**2))
-    # GPS_boje_data = pynmea2.parse("$GPGGA,150559.00,5102.85348,N,01345.01389,E,1,05,2.79,153.2,M,43.7,M,,*59")
-    # #print(str(GPS_boje_data))
-    # print("sending ...")
-    # sock_boot.sendto(bytes(str(GPS_boje_data)), (BOOT_IP, BOOT_PORT))
-    # #sock_gc.sendto(bytes(str(GPS_boje_data)), (GC_IP, GC_PORT))
-
-print("Connection lost")
-
-
-
-
+ 
 
 
 
