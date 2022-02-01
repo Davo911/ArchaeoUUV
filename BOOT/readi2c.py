@@ -13,6 +13,11 @@ temp = AnalogIn(ads, ADS.P2)
 
 while(True):
     time.sleep(1)
+    Voltage = leit.voltage
+
+    #Convert voltage value to TDS value
+    tdsValue=(133.42/Voltage*Voltage*Voltage - 255.86*Voltage*Voltage + 857.39*Voltage)*0.5;
+
     print("PH: " + str(ph.value), str(ph.voltage))
-    print("Leit: " + str(leit.value), str(leit.voltage))
+    print("Leit: " + str(tdsValue))
     print("Temp: " + str(temp.value), str(temp.voltage))
