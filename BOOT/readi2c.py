@@ -17,10 +17,9 @@ temperature = 20
 
 while(True):
     time.sleep(0.004)
-    if(leit.voltage == 0.0):
+    Voltage = leit.voltage
+    if(Voltage == 0.0):
         Voltage = 0.1
-    else:
-        Voltage = leit.voltage
     print("V="+str(Voltage))
     # if 30 values collected 0,004*30 = 0,12s
     if(counter >= 30):
