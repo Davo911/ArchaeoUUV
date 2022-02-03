@@ -16,24 +16,24 @@ counter = 0
 temperature = 20
 
 while(True):
-    time.sleep(0.004)
-    Voltage = leit.voltage
-    if(Voltage == 0.0):
-        Voltage = 0.1
-    print("V="+str(Voltage))
-    # if 30 values collected 0,004*30 = 0,12s
-    if(counter >= 30):
-        # calulate stuff
-        avgVolt = np.median(tmpArr)
-        compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0)
-        compensationVolatge = avgVolt / compensationCoefficient;           
-        tdsComp = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5
-        print("complicated tds: "+str(tdsComp))
-        tmpArr.clear()
+    # time.sleep(0.004)
+    # Voltage = leit.voltage
+    # if(Voltage == 0.0):
+    #     Voltage = 0.1
+    # print("V="+str(Voltage))
+    # # if 30 values collected 0,004*30 = 0,12s
+    # if(counter >= 30):
+    #     # calulate stuff
+    #     avgVolt = np.median(tmpArr)
+    #     compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0)
+    #     compensationVolatge = avgVolt / compensationCoefficient;           
+    #     tdsComp = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5
+    #     print("complicated tds: "+str(tdsComp))
+    #     tmpArr.clear()
 
-    tmpArr.append(leit.value)
+    #tmpArr.append(leit.value)
 
-    
+    time.sleep(1)
 
     #Convert voltage value to TDS value
     tdsValue=(133.42/Voltage*Voltage*Voltage - 255.86*Voltage*Voltage + 857.39*Voltage)*0.5
