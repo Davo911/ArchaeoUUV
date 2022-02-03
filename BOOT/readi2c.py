@@ -17,7 +17,9 @@ temperature = 20
 
 while(True):
     time.sleep(0.004)
+    
     Voltage = 0.1 if (leit.voltage == 0) else leit.voltage
+    print("V="+str(Voltage))
     # if 30 values collected 0,004*30 = 0,12s
     if(counter >= 30):
         # calulate stuff
