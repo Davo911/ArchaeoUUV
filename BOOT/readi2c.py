@@ -17,10 +17,6 @@ temperature = 20
 
 while(True):
     # time.sleep(0.004)
-    Voltage = leit.voltage
-    if(Voltage == 0.0):
-        Voltage = 0.1
-
     time.sleep(1)
 
 
@@ -30,12 +26,15 @@ while(True):
     print("Temp: " + str(temp.value), str(temp.voltage))
     
     #Convert voltage value to TDS value TODO: calibrieren, genauigkeit erhöhen
+    Voltage = leit.voltage
+    if(Voltage == 0.0):
+        Voltage = 0.1
+
     if(leit.voltage > 0.0):
         tdsValue = (133.42/Voltage*Voltage*Voltage - 255.86*Voltage*Voltage + 857.39*Voltage)*0.5
-        print("\nTDS = " + str(temp.value), str(temp.voltage))
+        print("\nTDS = " + str(tdsValue))
 
     if(ph.voltage > 0.0):
         phValue = 7 + ((2.5 - ph.voltage) / 0.18)
         print("PH-Value = "+ str(phValue))
-
     
