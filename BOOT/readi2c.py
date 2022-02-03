@@ -39,6 +39,6 @@ while(True):
     tdsValue=(133.42/Voltage*Voltage*Voltage - 255.86*Voltage*Voltage + 857.39*Voltage)*0.5
 
     print("PH: " + str(ph.value), str(ph.voltage))
-    print("Leit: " + str(tdsValue))
+    print("Leit: " + str(leit.value), str(leit.voltage))
     print("Temp: " + str(temp.value), str(temp.voltage))
     counter+=1
