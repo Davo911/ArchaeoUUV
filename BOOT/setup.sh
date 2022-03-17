@@ -1,3 +1,4 @@
+#!/bin/bash
 yes | sudo apt-get install build-essential python3-dev python3-smbus python3-pip
 yes | pip install numpy
 yes | pip3 install numpy
