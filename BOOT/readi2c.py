@@ -4,6 +4,7 @@ import time
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 import numpy as np
+import datetime
 i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
 
@@ -18,9 +19,9 @@ temperature = 20
 while(True):
     # time.sleep(0.004)
     time.sleep(1)
+    ts = datetime.datetime.now()
 
-
-
+    print("--------------------------\n"+str(ts))
     print("PHobj: " + str(ph.value), str(ph.voltage))
     print("Leit: " + str(leit.value), str(leit.voltage))
     print("Temp: " + str(temp.value), str(temp.voltage))
@@ -36,5 +37,5 @@ while(True):
 
     if(ph.voltage > 0.0):
         phValue = 7 + ((2.5 - ph.voltage) / 0.18)
-        print("PH-Value = "+ str(phValue))
+        print("PH-Value = "+ str(phValue)+"\n")
     
