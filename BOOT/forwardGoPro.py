@@ -8,6 +8,7 @@ import sys
 
 START_URL = "http://172.25.122.51/gp/gpWebcam/START?res=1080"
 STOP_URL = "http://172.25.122.51/gp/gpWebcam/STOP"
+
 try:
     args = sys.argv[1].split(':')
 
