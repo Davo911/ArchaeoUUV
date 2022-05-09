@@ -89,7 +89,6 @@ def main():
 
     while boje != None:
         time.sleep(0.01)
-        stat+=1
         #get BOOT parameter
         try:
             resp = requests.get(alt_url + "alt")
@@ -110,23 +109,30 @@ def main():
         speed_boje = boje.groundspeed
         newTime = datetime.now().strftime("%H%M%S.%f")
 
-        offset = math.sqrt((string_length**2)-(depth**2))
+        #offset = math.sqrt((string_length**2)-(depth**2))
         
-        #Correct if necessary
-        if (isclose(speed_boje, speed_boot, 0.2)):
-            stat-=1
+        print("newLatlng: "+ str([latitude, longitude]))
+        #Generate NMEA sentence and send it to UUV
+        GPS_boje = pynmea2.GGA('GP', 'GGA', (newTime , decTodms(latitude), lat_dir,decTodms(longitude), lon_dir, str(boje.gps_0.fix_type), str(boje.gps_0.satellites_visible), str(float(boje.gps_0.eph)/100), '0', 'M', '0', 'M', '', ''))
+        GSA_boje = pynmea2.GSA('GP', 'GSA', (boje.mode.name[1], str(boje.gps_0.fix_type),'17','15','19','24','32','10','12','25','','','','','0',str(boje.gps_0.eph ),str(10)))
+        print("Sending: ")
+        print(str(GPS_boje)+"\n")
+        print(str(GSA_boje)+"\n")
+        sock_boot.sendto(bytes(str(GPS_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+        sock_boot.sendto(bytes(str(GSA_boje)+"\n"), (BOOT_IP, BOOT_PORT))
 
-            newLatLng = add_offset(latitude, longitude, angle_boot, offset)
-            print("newLatlng: "+ str(newLatLng))
-
-            #Generate NMEA sentence and send it to UUV
-            GPS_boje = pynmea2.GGA('GP', 'GGA', (newTime , decTodms(newLatLng[0]), lat_dir,decTodms(newLatLng[1]), lon_dir, str(boje.gps_0.fix_type), str(boje.gps_0.satellites_visible), str(float(boje.gps_0.eph)/100), '0', 'M', '0', 'M', '', ''))
-            GSA_boje = pynmea2.GSA('GP', 'GSA', (boje.mode.name[1], str(boje.gps_0.fix_type),'17','15','19','24','32','10','12','25','','','','','0',str(boje.gps_0.eph ),str(10)))
-            print("Sending: ")
-            print(str(GPS_boje)+"\n")
-            print(str(GSA_boje)+"\n")
-            sock_boot.sendto(bytes(str(GPS_boje)+"\n"), (BOOT_IP, BOOT_PORT))
-            sock_boot.sendto(bytes(str(GSA_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+        ##Correct if necessary
+        #if (isclose(speed_boje, speed_boot, 0.2)):
+        #    newLatLng = add_offset(latitude, longitude, angle_boot, offset)
+        #    print("newLatlng: "+ str(newLatLng))
+        #    #Generate NMEA sentence and send it to UUV
+        #    GPS_boje = pynmea2.GGA('GP', 'GGA', (newTime , decTodms(newLatLng[0]), lat_dir,decTodms(newLatLng[1]), lon_dir, str(boje.gps_0.fix_type), str(boje.gps_0.satellites_visible), str(float(boje.gps_0.eph)/100), '0', 'M', '0', 'M', '', ''))
+        #    GSA_boje = pynmea2.GSA('GP', 'GSA', (boje.mode.name[1], str(boje.gps_0.fix_type),'17','15','19','24','32','10','12','25','','','','','0',str(boje.gps_0.eph ),str(10)))
+        #    print("Sending: ")
+        #    print(str(GPS_boje)+"\n")
+        #    print(str(GSA_boje)+"\n")
+        #    sock_boot.sendto(bytes(str(GPS_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+        #    sock_boot.sendto(bytes(str(GSA_boje)+"\n"), (BOOT_IP, BOOT_PORT))
     print("Connection lost")
 
 
@@ -135,13 +141,6 @@ while True:
         main()
     except Exception as e:
         print("\nMain Loop Failed: \n" + str(e) + "\n")
-
- 
-
-
-
-
-
 
 #        depth = boot.location.global_relative_frame.alt
 #        compass_boot = boot.heading
