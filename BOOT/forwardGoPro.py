@@ -4,10 +4,18 @@ import requests
 import json
 import atexit
 import sys
+import psutil
 
+usb_interface=psutil.net_if_addrs()["usb0"][0]
+if usb_interface == None:
+    print("GoPro not connected properly! No usb0 interface")
+    sys.exit()
 
-START_URL = "http://172.25.122.51/gp/gpWebcam/START?res=1080"
-STOP_URL = "http://172.25.122.51/gp/gpWebcam/STOP"
+GOPRO_IP = usb_interface.address [:-1] + "1"
+print("GoPro connected on "+GOPRO_IP)
+
+START_URL = "http://"+GOPRO_IP+"/gp/gpWebcam/START?res=1080"
+STOP_URL = "http://"+GOPRO_IP+"/gp/gpWebcam/STOP"
 
 try:
     args = sys.argv[1].split(':')
