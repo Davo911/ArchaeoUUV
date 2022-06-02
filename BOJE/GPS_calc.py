@@ -88,17 +88,17 @@ def main():
     
 
     while boje != None:
-        time.sleep(0.01)
+        time.sleep(0.1)
         #get BOOT parameter
-        try:
-            resp = requests.get(alt_url + "alt")
-            depth = float(resp.content)
-            resp = requests.get(alt_url + "heading")
-            angle_boot = float(resp.content)
-            resp = requests.get(alt_url + "groundspeed")
-            speed_boot = float(resp.content)
-        except Exception as e:
-            print("No Data from BOOT!\n")
+        #try:
+        #    resp = requests.get(alt_url + "alt")
+        #    depth = float(resp.content)
+        #    resp = requests.get(alt_url + "heading")
+        #    angle_boot = float(resp.content)
+        #    resp = requests.get(alt_url + "groundspeed")
+        #    speed_boot = float(resp.content)
+        #except Exception as e:
+        #    print("No Data from BOOT!\n")
 
         #get BOJE parameter
         latitude = boje.location.global_frame.lat
@@ -108,7 +108,9 @@ def main():
         angle_boje = math.radians(boje.heading)
         speed_boje = boje.groundspeed
         newTime = datetime.now().strftime("%H%M%S.%f")
-
+        
+        if longitude == None or latitude == None:
+            print("!NO GPS!")
         #offset = math.sqrt((string_length**2)-(depth**2))
         
         print("newLatlng: "+ str([latitude, longitude]))
@@ -118,8 +120,8 @@ def main():
         print("Sending: ")
         print(str(GPS_boje)+"\n")
         print(str(GSA_boje)+"\n")
-        sock_boot.sendto(bytes(str(GPS_boje)+"\n"), (BOOT_IP, BOOT_PORT))
-        sock_boot.sendto(bytes(str(GSA_boje)+"\n"), (BOOT_IP, BOOT_PORT))
+        sock_boot.sendto(bytes(str(GPS_boje)+"\n",encoding='utf8'), (BOOT_IP, BOOT_PORT))
+        sock_boot.sendto(bytes(str(GSA_boje)+"\n",encoding='utf8'), (BOOT_IP, BOOT_PORT))
 
         ##Correct if necessary
         #if (isclose(speed_boje, speed_boot, 0.2)):
