@@ -1,12 +1,14 @@
-
-import RPi.GPIO as GPIO
-import Adafruit_DHT
 import time
 from flask import Flask
 import logging
+from htu21 import HTU21
 
-DHTSensor = Adafruit_DHT.DHT11
-GPIO_Pin = 2
+htu = HTU21()
+
+print("Temp")
+print(htu.read_temperature())
+print("Feuchte")
+print(htu.read_humidity())
 
 #log = "~/temp.log"
 #logging.basicConfig(filename=log,level=logging.DEBUG,format='%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
@@ -15,11 +17,11 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     try:
-
         with open(r"/sys/class/thermal/thermal_zone0/temp") as File:
             CPUTemp = str(float(File.readline())/1000)
 
-        Luftfeuchte, Temperatur = Adafruit_DHT.read_retry(DHTSensor, GPIO_Pin)
+        Luftfeuchte = htu.read_humidity()
+        Temperatur = htu.read_temperature()
         if Luftfeuchte is None or Temperatur is None:
             print('Fehler')
         sensor_data = "Temperatur-CPU = "+CPUTemp+"°C<br/>" + 'Temperatur-Sensor = ' + str(Temperatur)+"°C<br/>" + 'Humidity = ' + str(Luftfeuchte) + "%<br/>"
