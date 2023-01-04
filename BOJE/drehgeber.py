@@ -38,12 +38,7 @@ while True:
   #print(lenght)
   if lenght<0:
      lenght=0
-  #o=subprocess.run(["curl http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/AHRS2/message/altitude"])
-  
-  depth= subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-  result = subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-  #print(result.stdout)
-  compass= subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
   print("Tiefe")
   print(requests.get(alt_url).text)
   print("Kompass")
@@ -62,8 +57,8 @@ while True:
   #  print(result2)
   #  print(result3)
   # print(result4)
-  os.system("clear")
   time.sleep(0.2)
+  os.system("clear")
   #currentPosition = spi.xfer2(AMT22_NOP, encoder, false) << 8;
   #print(currentPosition)
   #time.sleep(0.5)
