@@ -66,5 +66,7 @@ while True:
    print(compass)
 
    #Print Drehgeber stuff
-   
+   print("\n\nRotation: " + str(rotation))
+   print("Turns: " + str(turns))
    time.sleep(0.1)
+
