@@ -2,7 +2,7 @@ import spidev #import the SPI library for RB Pi 4 B board
 import time #import the Timing library for RB Pi 4 B board
 from urllib.parse import urlparse
 import requests
-import subprocess
+import threading
 import os
 
 AMT22_NOP = 0 #command to read the position of the encoder
@@ -19,46 +19,52 @@ spi.open(0, 0) #SPI port 0, CS 0
 speed_hz=500000 #setting the speed in hz
 delay_us=3 #setting the delay in microseconds
 
+turns = 0
+rotation = 0
+result = []
+
 alt_url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/AHRS2/message/altitude"
 compass_url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/VFR_HUD/message/heading"
+depth = 0
+compass = 0
 
-calibturns=255
-calibtotat=6518
+def update_boot_values():
+   while True:
+      global depth
+      global compass
+      depth = requests.get(alt_url).text
+      compass = requests.get(compass_url).text
+
+def update_encoder_values():
+   while True:
+      global turns
+      global rotation
+      global result
+
+      result=spi.xfer2([AMT22_NOP, AMT22_READ_TURNS, AMT22_NOP, AMT22_NOP],speed_hz,delay_us)
+      rotation=((result[0] & 0b111111) << 8) + result[1] # 0 - 16383 Pro umdrehung
+      turns=result[3]
+
+      #lenght=(((calibturns-turns)*16383)-rotation+calibtotat)/370
+      #print(lenght)
+
+#start depth & compass thread
+thread_boot = threading.Thread(target=update_boot_values, args=())
+thread_boot.start()
+
+#start encoder thread
+thread_encoder = threading.Thread(target=update_encoder_values, args=())
+thread_encoder.start()
+
+
 while True:
-  #result=spi.xfer2([AMT22_NOP, AMT22_NOP],speed_hz,delay_us)
-  #test=((result[0] & 0b111111) << 8) + result[1]
-  #print(test)
-  result=spi.xfer2([AMT22_NOP, AMT22_READ_TURNS, AMT22_NOP, AMT22_NOP],speed_hz,delay_us)
-  rotation=((result[0] & 0b111111) << 8) + result[1] # 0 - 16383 Pro umdrehung
-  turns=result[3]
-  print(rotation)
-  print(turns)
+   os.system("clear")
+   #Print boot data
+   print("Tiefe")
+   print(depth)
+   print("Kompass")
+   print(compass)
 
-  lenght=(((calibturns-turns)*16383)-rotation+calibtotat)/370
-  #print(lenght)
-  if lenght<0:
-     lenght=0
-
-  print("Tiefe")
-  print(requests.get(alt_url).text)
-  print("Kompass")
-  print(requests.get(compass_url).text)
-  #print(result.stderr)
-  #result[1] = result[1] << 8 
-  #result[1] = result[0] + result[1]
-  #  result2=spi.xfer2([AMT22_NOP, AMT22_READ_TURNS, AMT22_NOP, AMT22_NOP],speed_hz,delay_us) 
-  #result3=spi.xfer2([AMT22_NOP, AMT22_RESET],speed_hz,delay_us) 
-  #result4=spi.xfer2([AMT22_NOP, AMT22_ZERO],speed_hz,delay_us) 
-  #strings = [str(integer) for integer in result] #converting the list into an integer
-  #a_string = "".join(strings)
-  #an_integer = int(a_string)
-  #print(hex(an_integer)) #print the integer in hex format
-  #print(result) # Good enough for now
-  #  print(result2)
-  #  print(result3)
-  # print(result4)
-  time.sleep(0.2)
-  os.system("clear")
-  #currentPosition = spi.xfer2(AMT22_NOP, encoder, false) << 8;
-  #print(currentPosition)
-  #time.sleep(0.5)
+   #Print Drehgeber stuff
+   
+   time.sleep(0.1)
