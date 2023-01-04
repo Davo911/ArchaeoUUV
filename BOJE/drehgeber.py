@@ -49,11 +49,11 @@ def update_encoder_values():
       #print(lenght)
 
 #start depth & compass thread
-thread_boot = threading.Thread(target=update_boot_values, args=())
+thread_boot = threading.Thread(target=update_boot_values, args=(), daemon=True)
 thread_boot.start()
 
 #start encoder thread
-thread_encoder = threading.Thread(target=update_encoder_values, args=())
+thread_encoder = threading.Thread(target=update_encoder_values, args=(), daemon=True)
 thread_encoder.start()
 
 
