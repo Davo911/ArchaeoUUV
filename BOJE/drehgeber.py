@@ -1,6 +1,7 @@
 import spidev #import the SPI library for RB Pi 4 B board
 import time #import the Timing library for RB Pi 4 B board
 from urllib.parse import urlparse
+import requests
 import subprocess
 import os
 
@@ -18,6 +19,8 @@ spi.open(0, 0) #SPI port 0, CS 0
 speed_hz=500000 #setting the speed in hz
 delay_us=3 #setting the delay in microseconds
 
+alt_url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/AHRS2/message/altitude"
+compass_url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/VFR_HUD/message/heading"
 
 calibturns=255
 calibtotat=6518
@@ -36,16 +39,15 @@ while True:
   if lenght<0:
      lenght=0
   #o=subprocess.run(["curl http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/AHRS2/message/altitude"])
-  url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/AHRS2/message/altitude"
+  
   depth= subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-  url="http://192.168.2.2:6040/mavlink/vehicles/1/components/1/messages/VFR_HUD/message/heading"
   result = subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
   #print(result.stdout)
   compass= subprocess.run(["curl", url], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
   print("Tiefe")
-  print(depth.stdout)
+  print(requests.get(alt_url).text)
   print("Kompass")
-  print(compass.stdout)
+  print(requests.get(compass_url).text)
   #print(result.stderr)
   #result[1] = result[1] << 8 
   #result[1] = result[0] + result[1]
